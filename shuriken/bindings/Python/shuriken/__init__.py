@@ -1,4 +1,5 @@
 from shuriken.dex import *
+import importlib.util
 import ctypes
 import ctypes.util
 import os
@@ -39,21 +40,28 @@ def _load_lib(path):
 
 _shuriken = None
 
-# Attempt to load library from SHURIKEN_PATH environment variable if set
-_path_list = [os.getenv("SHURIKEN_PATH", None)]
-# Append common system paths
-_path_list.extend(common_paths)
+# Attempt to load library distributed with the Python bindings
+module_spec = importlib.util.find_spec("libshuriken")
+if module_spec and module_spec.origin:
+    print(f"Trying to load library from: {module_spec.origin}")
+    _shuriken = ctypes.cdll.LoadLibrary(module_spec.origin)
 
-for _path in _path_list:
-    if _path is None:
-        continue
-    print(f"Trying to load library from: {_path}")
-    _shuriken = _load_lib(_path)
-    if _shuriken is not None:
-        print(f"Library loaded from: {_path}")
-        break
 else:
-    raise ImportError("ERROR: fail to load the dynamic library")
+    # Attempt to load library from SHURIKEN_PATH environment variable if set
+    _path_list = [os.getenv("SHURIKEN_PATH", None)]
+    # Append common system paths
+    _path_list.extend(common_paths)
+
+    for _path in _path_list:
+        if _path is None:
+            continue
+        print(f"Trying to load library from: {_path}")
+        _shuriken = _load_lib(_path)
+        if _shuriken is not None:
+            print(f"Library loaded from: {_path}")
+            break
+    else:
+        raise ImportError("ERROR: fail to load the dynamic library")
 
 # import dex structures
 

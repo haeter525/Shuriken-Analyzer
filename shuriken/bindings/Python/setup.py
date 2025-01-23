@@ -4,7 +4,7 @@ import platform
 import subprocess
 from pathlib import Path
 from contextlib import contextmanager
-from setuptools import setup, find_packages
+from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
@@ -68,6 +68,14 @@ class custom_build_ext(_build_ext):
         build_libraries()
         super().run()
 
+    def build_extension(self, ext) -> None:
+        import shutil
+        import os.path
+        
+        os.makedirs(os.path.dirname(self.get_ext_fullpath(ext.name)), exist_ok = True)
+
+        shutil.copyfile("/usr/local/lib/libshuriken.so", self.get_ext_fullpath(ext.name))
+
 
 class custom_bdist_egg(_bdist_egg):
     def run(self):
@@ -106,4 +114,5 @@ setup(
         'Operating System :: POSIX :: Linux',
     ],
     python_requires='>=3.10',
+    ext_modules=[Extension("libshuriken", sources=[])]
 )
